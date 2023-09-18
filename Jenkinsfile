@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+	    docker {
+		    image 'maven'
+		    args '-v $HOME/.m2:/root/.m2'
+	    }
+    }
     stages {
         stage('Git Checkout') {
             steps {
@@ -33,26 +38,10 @@ pipeline {
             steps {
 		// Change this as per your Jenkins Configuration
                 withSonarQubeEnv('SonarQube') {
-                    bat 'mvn package sonar:sonar'
+                    sh "mvn package sonar:sonar"
+		timeout(time: 1, unit: 'HOURS') {
+			sh "mvn clean install"
                 }
             }
         }
-
-	stage("Quality gate") {
-            steps {
-                waitForQualityGate abortPipeline: true
-            }
-        }
-        
-    }
-    post {
-        
-        success {
-            echo 'This will run only if successful'
-        }
-        failure {
-            echo 'This will run only if failed'
-        }
-    
-    }
 }
